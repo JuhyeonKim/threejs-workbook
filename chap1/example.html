@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Example 01.02 - First Scene</title>
+    <script type="text/javascript" src="/libs/three.js"></script>
+    <script type="text/javascript" src="/libs/stats.js"></script>
+    <script type="text/javascript" src="/libs/dat.gui.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+
+</head>
+<body>
+<div id="stats-output"></div>
+<div id="WebGL-output"></div>
+
+
+<script type="text/javascript">
+
+
+    function initStats(){
+        var stats = new Stats();
+        stats.setMode(0);
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.left = '0px';
+        stats.domElement.style.top = '0px';
+        document.getElementById("stats-output").appendChild(stats.domElement);
+
+        return stats;
+
+    }
+
+
+    var controls = new function(){ // 값 Controller 노출
+
+        this.rotationSpeed = 0.02;
+        this.bouncingSpeed = 0.03;
+
+    };
+
+    var gui = new dat.GUI();
+    gui.add(controls, 'rotationSpeed', 0, 0.5);
+    gui.add(controls, 'bouncingSpeed', 0, 0.5);
+
+
+    var scene;
+    var camera;
+    var renderer;
+
+
+    function init() {
+
+        var stats = initStats(); // 상태 노출을 위한 아이템
+
+        // create a scene, that will hold all our elements such as objects, cameras and lights.
+        scene = new THREE.Scene();
+
+        // create a camera, which defines where we're looking at.
+        camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 1000); // 거리,
+
+        // create a render and set the size
+        renderer = new THREE.WebGLRenderer(); // WebGLRenderer 권장
+        renderer.setClearColorHex();
+        renderer.setClearColor(new THREE.Color(0xEEEEEE, 1.0)); //
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMapEnabled = true; //renderer 에게 그림자가 필요함을 알림
+
+        var axes = new THREE.AxisHelper(20); // Axis Helper (사이즈 정의 필요 - 전매니저님 통해서 확인)
+        scene.add(axes);
+
+        // var planeGeometry = new THREE.PlaneGeometry(60, 30); // width, height, widthSegments, heightSegments (바닥판용인가? -> 토지용인듯?) - Buffer 를 사용하기 쉽
+        var planeGeometry = new THREE.PlaneBufferGeometry(60, 30); // width, height, widthSegments, heightSegments (바닥판용인가? -> 토지용인듯?) - Buffer 를 사용하기 쉽
+        var planeMaterial = new THREE.MeshPhongMaterial({color: 0xcccccc}); // 바닥판 색상 (MeshLambertMaterial, MeshLambertMaterial, MeshPhongMaterial - 그림자의 영향을 받음)
+        var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+
+        plane.rotation.x = -0.5 * Math.PI; // 바닥판 기울기 (x 축 기준)
+        // plane.rotation.y = -0.3 * Math.PI; // 바닥판 기울기 (y 축 기준)
+        plane.position.x = 15;
+        plane.position.y = 0;
+        plane.position.z = 0;
+        plane.receiveShadow = true; // 그림자를 받는 바닥인가?
+        scene.add(plane);
+
+        // var planeGeometry = new THREE.PlaneGeometry(60, 30); // width, height, widthSegments, heightSegments (바닥판용인가? -> 토지용인듯?, 같이 써도 될것같음) - Buffer 를 사용하기 쉽
+        var planeGeometry1 = new THREE.PlaneBufferGeometry(10, 10); // width, height, widthSegments, heightSegments (바닥판용인가? -> 토지용인듯? , 같이 써도 될것같음) - Buffer 를 사용하기 쉽
+        var planeMaterial1 = new THREE.MeshPhongMaterial({color: 0xcccccc}); // 바닥판 색상 (MeshLambertMaterial, MeshLambertMaterial, MeshPhongMaterial - 그림자의 영향을 받음)
+        var plane1 = new THREE.Mesh(planeGeometry1, planeMaterial1);
+
+        plane1.rotation.x = 0.2 * Math.PI; // 바닥판 기울기 (x 축 기준)
+        // plane.rotation.y = -0.3 * Math.PI; // 바닥판 기울기 (y 축 기준)
+        plane1.position.x = -15;
+        plane1.position.y = 20;
+        plane1.position.z = 15;
+        plane1.receiveShadow = true; // 그림자를 받는 바닥인가?
+        scene.add(plane1);
+
+        camera.position.x = -10; // 시점 위치 (x축 기준)
+        camera.position.y = 20; // 시점 위치 (y축 기준)
+        camera.position.z = 30; // 시점 위치 (z축 기준) // 시점 돌릴 때, 사용 할듯.. (3D 에디팅 기능이 붙을 때,)
+        camera.lookAt(scene.position);
+
+
+        var spotLight = new THREE.SpotLight(0xffffff); // 조명 색상
+        spotLight.position.set(40, 60, -10); // 조명 비추는 위치
+        spotLight.castShadow = true; // 그림자를 생성하는 조명인가?
+        scene.add(spotLight);
+
+
+        // create a cube
+        var cubeGeometry = new THREE.BoxGeometry(4, 6, 4); // x, y, z 사이즈 (3각형 그릴 때,)
+        var cubeMaterial = new THREE.MeshPhongMaterial({color: 0xff0000});// 개체 색상
+        var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+        cube.castShadow = true; // 그림자를 생성하는 개체인가?
+
+        // position the cube
+        cube.position.x = -8; // 기준점 (0,0,0) 을 기준으로 x 위치
+        cube.position.y = 3; // 기준점 (0,0,0) 을 기준으로 y 위치
+        cube.position.z = 0; // 기준점 (0,0,0) 을 기준으로 z 위치
+
+        // add the cube to the scene
+        scene.add(cube);
+
+
+        var sphereGeometry = new THREE.SphereGeometry(2, 200, 200); // 크기, widthSegments - 그리는 모양이 달라짐,, heightSegments - 그리는 모양이 달라짐,
+        var sphereMaterial = new THREE.MeshPhongMaterial({color: 0x7777ff});
+        var sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+
+        // position the sphere
+        sphere.position.x = 20;
+        sphere.position.y = 4;
+        sphere.position.z = 2;
+        sphere.castShadow = true;
+
+        // add the sphere to the scene
+        scene.add(sphere);
+
+        document.getElementById("WebGL-output").appendChild(renderer.domElement);
+        // renderer.render(scene, camera);
+        renderScene();
+
+        var step = 0;
+        function renderScene(){
+
+            stats.update();
+            step += 0.04;
+
+            // rotate the cube around its axes
+            cube.rotation.x += controls.rotationSpeed;
+            cube.rotation.y += controls.rotationSpeed;
+            // cube.rotation.z += controls.rotationSpeed;
+            cube.rotation.z += -0.01; // z 축 기준으로 움직이는 방향 (양/음에 따라 움직이는 방향이 달라짐, 숫자 크기에 따라서 속도가 달라짐)
+
+            // bounce the sphere up and down
+            step += controls.bouncingSpeed;
+            sphere.position.x = 10 + ( 10 * (Math.cos(step))); // x 축 기준위치 + 포물선 모양
+            sphere.position.y = 2 + ( 15 * Math.abs(Math.sin(step))); // y 축 기준위치 + 포물선 모양 (높이)
+            sphere.position.z = 2 + ( 12 * Math.abs(Math.sin(step))); // z 축 기준위치 + 포물선 모양
+
+
+            requestAnimationFrame(renderScene); // 애니매이션 효과를 주기 위해 리 렌더링 함 -
+            renderer.render(scene, camera);
+
+        }
+
+    }
+
+
+    window.addEventListener('resize', onResize, false); // 리사이즈 이벤트 대응 - setInterval 을 대체함
+
+    function onResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
+
+
+    window.onload = init;
+</script>
+</body>
+</html>
